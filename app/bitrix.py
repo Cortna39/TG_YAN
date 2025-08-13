@@ -1,22 +1,36 @@
+import os
+import time
 import requests
+from requests import exceptions
 from app.settings import settings
 from app.logger import get_logger
 
 BX = settings.bitrix_webhook_url
 log = get_logger("app.bitrix")
 
+BITRIX_MAX_ATTEMPTS = int(os.getenv("BITRIX_MAX_ATTEMPTS", "3"))
+
 
 def bx_call(method: str, **params):
-    try:
-        r = requests.post(f"{BX}/{method}.json", json=params, timeout=20)
-        r.raise_for_status()
-        data = r.json()
-        if "error" in data:
-            raise RuntimeError(f"{method}: {data['error']}: {data.get('error_description')}")
-        return data["result"]
-    except Exception as e:
-        log.error("bx_call_failed", extra={"method": method, "error": str(e)})
-        raise
+    for attempt in range(1, BITRIX_MAX_ATTEMPTS + 1):
+        try:
+            r = requests.post(f"{BX}/{method}.json", json=params, timeout=20)
+        except exceptions.RequestException as e:
+            if attempt == BITRIX_MAX_ATTEMPTS:
+                log.error("bx_call_failed", extra={"method": method, "error": str(e), "attempt": attempt})
+                raise
+            log.warning("bx_call_retry", extra={"method": method, "error": str(e), "attempt": attempt})
+            time.sleep(2 ** (attempt - 1))
+            continue
+        try:
+            r.raise_for_status()
+            data = r.json()
+            if "error" in data:
+                raise RuntimeError(f"{method}: {data['error']}: {data.get('error_description')}")
+            return data["result"]
+        except Exception as e:
+            log.error("bx_call_failed", extra={"method": method, "error": str(e)})
+            raise
 
 
 def get_deal_full(deal_id: int) -> dict:

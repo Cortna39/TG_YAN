@@ -88,6 +88,11 @@ def process_deal_event(event_type: str, deal_id: int):
     with conn() as c:
         state = get_deal_state(c, deal_id)
         counter_id, token, used_uf = resolve_counter(deal, state)
+        try:
+            counter_id, token, used_uf = resolve_counter(deal, state)
+        except RuntimeError as e:
+            log.warning("resolve_counter_failed", extra={"deal_id": deal_id, "error": str(e)})
+            return
         extra_ep = _contact_ep(contact_id)
         # передаём client_id, извлечённый из 'client_id' (или из UF при его отсутствии)
         payload = build_payload(counter_id, token, client_id, event_type, deal, used_uf, extra_ep=extra_ep)
@@ -126,6 +131,11 @@ def handle_update(deal_id: int):
         with conn() as c:
             state = get_deal_state(c, deal_id)
             counter_id, token, used_uf = resolve_counter(deal, state)
+            try:
+                counter_id, token, used_uf = resolve_counter(deal, state)
+            except RuntimeError as e:
+                log.warning("resolve_counter_failed", extra={"deal_id": deal_id, "error": str(e)})
+                return
             extra_ep = _contact_ep(contact_id)
             # передаём актуальный client_id (из 'client_id' или из UF как fallback)
             payload = build_payload(counter_id, token, client_id, ev, deal, used_uf, extra_ep=extra_ep)

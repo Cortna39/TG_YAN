@@ -1,4 +1,6 @@
 import time
+import threading
+
 from app.db import conn, get_routing_map
 from app.settings import settings
 from app.logger import get_logger
@@ -9,6 +11,7 @@ class Router:
     def __init__(self):
         self._cache = {}
         self._loaded_at = 0
+        self._lock = threading.Lock()
 
     def refresh(self):
         with conn() as c:
@@ -20,12 +23,15 @@ class Router:
                 "mp_token": item["mp_token"]
             }
         dbm.update(envm)
-        self._cache = dbm
-        self._loaded_at = time.time()
+        with self._lock:
+            self._cache = dbm
+            self._loaded_at = time.time()
         log.info("routing_refreshed", extra={"count": len(self._cache)})
 
     def pick(self, uf_value: str):
-        if time.time() - self._loaded_at > 300:
+        with self._lock:
+            need_refresh = time.time() - self._loaded_at > 300
+        if need_refresh:
             self.refresh()
         route = self._cache.get((uf_value or "").strip().lower())
         if not route:
