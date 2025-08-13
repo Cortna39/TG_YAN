@@ -10,17 +10,6 @@ from dateutil import parser as dtparser
 log = get_logger("app.logic")
 
 
-def _is_before_cutoff(deal: dict) -> bool:
-    if not settings.process_from_date:
-        return False
-    s = deal.get("DATE_CREATE") or ""
-    try:
-        created = dtparser.parse(s, dayfirst=False).date()
-        return created < settings.process_from_date
-    except Exception:
-        return False
-
-
 def _extract_client_id(deal: dict) -> str:
     """
     Берём client_id из обычного поля сделки 'client_id'.
@@ -75,9 +64,6 @@ def _contact_ep(contact_id: int | None) -> dict:
 
 def process_deal_event(event_type: str, deal_id: int):
     deal = bx.get_deal_full(deal_id)
-    if _is_before_cutoff(deal):
-        log.info("skip_old_deal", extra={"deal_id": deal_id, "date_create": deal.get("DATE_CREATE")})
-        return
 
     contact_id = bx.ensure_contact_for_deal(deal)
     if not has_required(deal):
@@ -87,14 +73,12 @@ def process_deal_event(event_type: str, deal_id: int):
 
     with conn() as c:
         state = get_deal_state(c, deal_id)
-        counter_id, token, used_uf = resolve_counter(deal, state)
         try:
             counter_id, token, used_uf = resolve_counter(deal, state)
         except RuntimeError as e:
             log.warning("resolve_counter_failed", extra={"deal_id": deal_id, "error": str(e)})
             return
         extra_ep = _contact_ep(contact_id)
-        # передаём client_id, извлечённый из 'client_id' (или из UF при его отсутствии)
         payload = build_payload(counter_id, token, client_id, event_type, deal, used_uf, extra_ep=extra_ep)
         h = payload_hash(payload)
         if state and state.get("last_sent_hash") == h:
@@ -115,9 +99,6 @@ def process_deal_event(event_type: str, deal_id: int):
 
 def handle_update(deal_id: int):
     deal = bx.get_deal_full(deal_id)
-    if _is_before_cutoff(deal):
-        log.info("skip_old_deal_update", extra={"deal_id": deal_id, "date_create": deal.get("DATE_CREATE")})
-        return
 
     contact_id = bx.ensure_contact_for_deal(deal)
     if not has_required(deal):
@@ -130,14 +111,12 @@ def handle_update(deal_id: int):
     if ev:
         with conn() as c:
             state = get_deal_state(c, deal_id)
-            counter_id, token, used_uf = resolve_counter(deal, state)
             try:
                 counter_id, token, used_uf = resolve_counter(deal, state)
             except RuntimeError as e:
                 log.warning("resolve_counter_failed", extra={"deal_id": deal_id, "error": str(e)})
                 return
             extra_ep = _contact_ep(contact_id)
-            # передаём актуальный client_id (из 'client_id' или из UF как fallback)
             payload = build_payload(counter_id, token, client_id, ev, deal, used_uf, extra_ep=extra_ep)
             h = payload_hash(payload)
             if state and state.get("last_sent_hash") == h:
