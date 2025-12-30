@@ -7,3 +7,7 @@ requests==2.32.3
 python-dotenv==1.0.1
 python-json-logger==2.0.7
 python-dateutil==2.9.0.post0
+
+Django==5.1.2
+celery==5.4.0
+redis==5.0.8

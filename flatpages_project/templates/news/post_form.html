@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action_label }} {{ type_label }}{% endblock %}
+
+{% block content %}
+  <h1 class="h3 mb-3">{{ action_label }} {{ type_label }}</h1>
+  <form method="post" class="card card-body shadow-sm">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">{{ action_label }}</button>
+  </form>
+{% endblock %}
