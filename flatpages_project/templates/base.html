@@ -1,0 +1,63 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Flatpages Demo{% endblock %}</title>
+    <link
+      rel="stylesheet"
+      href="{% static 'bootstrap/css/bootstrap.min.css' %}"
+    />
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}" />
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+      <div class="container">
+        <a class="navbar-brand" href="/">Flatpages</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">О проекте</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/double/">Двойной контент</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/private/">Только для входа</a>
+            </li>
+          </ul>
+          <span class="navbar-text text-white">
+            {% if request.user.is_authenticated %}
+              Пользователь: {{ request.user }}
+            {% else %}
+              Гость
+            {% endif %}
+          </span>
+        </div>
+      </div>
+    </nav>
+
+    <main class="container py-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          {% block content %}{% endblock %}
+        </div>
+      </div>
+    </main>
+
+    <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  </body>
+</html>

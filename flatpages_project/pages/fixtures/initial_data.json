@@ -1,0 +1,49 @@
+[
+  {
+    "model": "sites.site",
+    "pk": 1,
+    "fields": {
+      "domain": "example.com",
+      "name": "Example"
+    }
+  },
+  {
+    "model": "flatpages.flatpage",
+    "pk": 1,
+    "fields": {
+      "url": "/about/",
+      "title": "О проекте",
+      "content": "<p>Это демонстрационная страница с измененными шрифтами и размером текста.</p>",
+      "enable_comments": false,
+      "template_name": "flatpages/styled.html",
+      "registration_required": false,
+      "sites": [1]
+    }
+  },
+  {
+    "model": "flatpages.flatpage",
+    "pk": 2,
+    "fields": {
+      "url": "/double/",
+      "title": "Двойной контент",
+      "content": "<p>Этот контент должен выводиться дважды подряд без изменений.</p>",
+      "enable_comments": false,
+      "template_name": "flatpages/double.html",
+      "registration_required": false,
+      "sites": [1]
+    }
+  },
+  {
+    "model": "flatpages.flatpage",
+    "pk": 3,
+    "fields": {
+      "url": "/private/",
+      "title": "Закрытая страница",
+      "content": "<p>Доступно только авторизованным пользователям.</p>",
+      "enable_comments": false,
+      "template_name": "flatpages/private.html",
+      "registration_required": true,
+      "sites": [1]
+    }
+  }
+]
